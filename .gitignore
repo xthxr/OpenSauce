@@ -1,0 +1,36 @@
+# Compiled files
+*.class
+*.pyc
+*.pyo
+__pycache__/
+*.so
+*.o
+*.a
+*.exe
+*.out
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build directories
+build/
+dist/
+target/
+bin/
+out/
+
+# Language-specific
+node_modules/
+package-lock.json
+yarn.lock
+*.log
+.env
+
+# OS files
+Thumbs.db
+desktop.ini
