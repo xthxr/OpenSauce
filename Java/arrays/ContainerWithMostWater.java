@@ -12,7 +12,7 @@
  * Space Complexity: O(1)
  */
 
-public class Solution {
+public class ContainerWithMostWater {
 
     public int maxArea(int[] height) {
         int n = height.length;
