@@ -1,3 +1,5 @@
+
+
 # LeetCode Question  934. Shortest Bridge
 
 """
@@ -102,3 +104,45 @@ class Solution:
 
         return -1   # (the grid always has two islands, so we never hit this)
 
+def test_shortest_bridge():
+    s = Solution()
+    # Example 1
+    grid1 = [[0,1],[1,0]]
+    assert s.shortestBridge([row[:] for row in grid1]) == 1
+
+    # Example 2
+    grid2 = [[0,1,0],[0,0,0],[0,0,1]]
+    assert s.shortestBridge([row[:] for row in grid2]) == 2
+
+    # Example 3
+    grid3 = [
+        [1,1,1,1,1],
+        [1,0,0,0,1],
+        [1,0,1,0,1],
+        [1,0,0,0,1],
+        [1,1,1,1,1]
+    ]
+    assert s.shortestBridge([row[:] for row in grid3]) == 1
+
+    # Minimal grid, islands at corners
+    grid4 = [
+        [1,0,0,0,1]
+    ]
+    assert s.shortestBridge([row[:] for row in grid4]) == 3
+
+    # Two islands, already adjacent
+    grid5 = [
+        [1,0,1]
+    ]
+    assert s.shortestBridge([row[:] for row in grid5]) == 1
+
+    # Large grid, islands far apart
+    grid6 = [
+        [1] + [0]*98 + [1]
+    ]
+    assert s.shortestBridge([row[:] for row in grid6]) == 98
+
+    print("All test cases passed.")
+
+# Uncomment to run tests
+# test_shortest_bridge()
