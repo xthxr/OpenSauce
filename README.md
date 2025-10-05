@@ -99,7 +99,7 @@ Each language folder supports the following topics:
 
 This repository is participating in **Hacktoberfest 2025**! 
 
-- Complete 4 quality pull requests during October to earn your Hacktoberfest swag
+- Complete 6 quality pull requests during October to earn your Hacktoberfest swag
 - Make sure your PRs are meaningful contributions, not spam
 - Check out [Hacktoberfest Official Website](https://hacktoberfest.com) for more details
 
