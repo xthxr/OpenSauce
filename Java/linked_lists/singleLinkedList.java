@@ -54,7 +54,6 @@ public class LinkedList {
         while (current.next != null && current.next.data != data) {
             current = current.next;
         }
-
         if (current.next != null) {
             current.next = current.next.next;
         }
