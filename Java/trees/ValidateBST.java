@@ -36,10 +36,10 @@ public class ValidateBST {
         
         Stack<TreeNode> stack = new Stack<>();
         TreeNode current = root;
-        Integer prev = null;  // Tracks previous value in inorder traversal
+        Integer prev = null;  
         
         while (current != null || !stack.isEmpty()) {
-            // Reach the leftmost node
+        
             while (current != null) {
                 stack.push(current);
                 current = current.left;
