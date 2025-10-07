@@ -41,7 +41,7 @@ public class Memoization {
             memo[i] = -1;
         }
 
-        System.out.println("Fibonacci sequence using the memoization algorithm:")
+        System.out.println("Fibonacci sequence using the memoization algorithm:");
         System.out.println("fib(" + n + ") = " + fib(n));
     }
 }
