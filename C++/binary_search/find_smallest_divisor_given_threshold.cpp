@@ -21,8 +21,10 @@
 
 #include <iostream>
 #include <vector>
-#include <math.h>
+#include <cmath>        
+#include <algorithm>    
 using namespace std;
+
 class Solution
 {
 public:
