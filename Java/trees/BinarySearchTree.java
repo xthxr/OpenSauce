@@ -1,99 +1,163 @@
-public class BinarySearchTree {
-    
-    class Node {
-        int key;
-        Node left, right;
-
-        public Node(int item) {
-            key = item;
-            left = right = null;
+import java.util.Scanner;
+class BinarySearchTree{
+    class TreeNode{
+        TreeNode left;
+        int data;
+        TreeNode right;
+        TreeNode(int data){
+            this.left = null;
+            this.data = data;
+            this.right = null;
         }
     }
 
-    // Root of the BST
-    Node root;
+    public TreeNode root;
 
-    // Constructor to initialize an empty BST
-    public BinarySearchTree() {
-        root = null;
+    BinarySearchTree(){
+        this.root = null;
     }
 
-    public void insert(int key) {
-        root = insertRec(root, key);
-    }
-
-    private Node insertRec(Node root, int key) {
-        // If the tree is empty, return a new node
-        if (root == null) {
-            root = new Node(key);
-            return root;
+    int height(TreeNode node){
+        int x,y;
+        if (node!=null){
+            x = height(node.left);
+            y= height(node.right);
+            if (x>y){
+                return x+1;
+            }else {
+                return y+1;
+            }
         }
-
-        // Otherwise, recur down the tree
-        if (key < root.key) {
-            root.left = insertRec(root.left, key);
-        } else if (key > root.key) {
-            root.right = insertRec(root.right, key);
-        }
-
-        // return the (unchanged) root pointer
-        return root;
+        return 0;
     }
 
-    
-    public boolean search(int key) {
-        return searchRec(root, key);
-    }
-  
-    private boolean searchRec(Node root, int key) {
-        // Base Cases: root is null or key is present at root
-        if (root == null) {
-            return false;
+    TreeNode search(int key){
+        TreeNode temp = root;
+        while (temp!=null){
+            if (temp.data == key){
+                return temp;
+            }else if (temp.data > key){
+                temp = temp.left;
+            }else {
+                temp = temp.right;
+            }
         }
-        if (root.key == key) {
-            return true;
-        }
-
-        // Key is greater than root's key
-        if (key > root.key) {
-            return searchRec(root.right, key);
-        }
-        // Key is smaller than root's key
-        return searchRec(root.left, key);
-    }
-    public void inOrder() {
-        inOrderRec(root);
-        System.out.println(); // Move to next line after traversal
+        return null;
     }
 
-
-    private void inOrderRec(Node root) {
-        if (root != null) {
-            inOrderRec(root.left);
-            System.out.print(root.key + " ");
-            inOrderRec(root.right);
+    void insert(int data){
+        TreeNode newNode = new TreeNode(data);
+        TreeNode temp = root;
+        TreeNode tail = null;
+        if (root==null){
+            root = newNode;
+            return;
+        }
+        while (temp!=null){
+            tail = temp;
+            if (data == temp.data){
+                System.out.println("Element Already Present.");
+                return;
+            }else if (temp.data>data){
+                temp = temp.left;
+            }else {
+                temp = temp.right;
+            }
+        }
+        if (data > tail.data){
+            tail.right = newNode;
+        }else{
+            tail.left = newNode;
         }
     }
 
-    public static void main(String[] args) {
+    void inOrer(TreeNode node){
+        if (node==null){
+            return;
+        }
+        inOrer(node.left);
+        System.out.print(node.data+" ");
+        inOrer(node.right);
+    }
+
+    TreeNode inOrderPredecssor(TreeNode node){
+        while (node != null && node.right!=null){
+            node = node.right;
+        }
+        return node;
+    };
+
+    TreeNode inOrderSuccessor(TreeNode node){
+        while (node!=null && node.left!=null){
+            node = node.left;
+        }
+        return node;
+    }
+
+    TreeNode remove(TreeNode node,int data){
+        if (node == null){
+            return null;
+        }
+        if (node.data>data){
+            node.left = remove(node.left,data);
+        } else if (node.data<data) {
+            node.right = remove(node.right,data);
+        }else {
+            if (node.left==null){
+                return node.right;
+            } else if (node.right==null) {
+                return node.left;
+            }
+
+            if (height(node.left) > height(node.right)){
+                TreeNode predecssor = inOrderPredecssor(node.left);
+                node.data = predecssor.data;
+                node.left = remove(node.left,predecssor.data);
+            }else {
+                TreeNode successor = inOrderSuccessor(node.right);
+                node.data = successor.data;
+                node.right = remove(node.right,successor.data);
+            }
+        }
+        return node;
+    }
+
+   public static void main(String[] args){
+        Scanner scan = new Scanner(System.in);
+        int[] nums = {30,15,50,10,20,40,60};
         BinarySearchTree bst = new BinarySearchTree();
+        for(int num : nums){
+            bst.insert(num);
+        }
 
-        // Insert nodes
-        bst.insert(50);
-        bst.insert(30);
-        bst.insert(20);
-        bst.insert(40);
-        bst.insert(70);
-        bst.insert(60);
-        bst.insert(80);
+        while (true){
+            System.out.println();
+            System.out.print("1.Insert\n2.Search\n3.Inorder\n4.Remove\nYour Choice:- ");
+            int choice = scan.nextInt();
+            switch (choice){
+                case 1:System.out.print("Enter the element:- ");
+                    int data = scan.nextInt();
+                    bst.insert(data);
+                break;
+                case 2:System.out.print("Enter the element to search:- ");
+                    int key = scan.nextInt();
+                    TreeNode result = bst.search(key);
+                    if(result==null){
+                        System.out.println("Element Not found");
+                    }else{
+                        System.out.println("Elment found "+result);
+                    }
+                    break;
+                case 3:System.out.println("Inorder");
+                bst.inOrer(bst.root);
+                break;
+                case 4: System.out.print("Enter the elment to remove:- ");
+                    data = scan.nextInt();
+                    bst.remove(bst.root, data);
+                    break;
+                default:System.out.println("Choose from above options only.");
+            }
+        }
 
-        // Print in-order traversal of the BST
-        System.out.print("In-order traversal of the BST: ");
-        bst.inOrder(); // This should print: 20 30 40 50 60 70 80
-
-        // Search for values
-        System.out.println("Search for 40: " + (bst.search(40) ? "Found" : "Not Found"));
-        System.out.println("Search for 90: " + (bst.search(90) ? "Found" : "Not Found"));
-        System.out.println("Search for 20: " + (bst.search(20) ? "Found" : "Not Found"));
     }
 }
