@@ -25,11 +25,15 @@ public class Longest_Palindromic_Substring {
     public static void main(String[] args) {
         /* Enter your code here. Read input from STDIN. Print output to STDOUT. Your class should be named Main. */
         Scanner sc=new Scanner(System.in);
+        System.out.println("Enter the number of test cases:");
         int t=sc.nextInt();
         sc.nextLine();
         while(t-- > 0){ // for multiple test cases
+            System.out.println("Enter the length of the string:");
             int n=sc.nextInt(); // length of the string
+            System.out.println("Enter the string:");
             String s=sc.next(); // input string
+            System.out.println("Length of the longest palindromic substring is:");
             System.out.println(lps(s,n)); // print the length of the longest palindromic substring
         }
     }
