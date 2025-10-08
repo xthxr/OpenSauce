@@ -18,6 +18,7 @@ Organize your code by topic:
 - `backtracking/` - Backtracking problems
 - `math/` - Mathematical algorithms
 - `strings/` - String manipulation problems
+- `tries` - tree-like data structure that stores a dynamic set of strings
 
 ## Naming Convention
 

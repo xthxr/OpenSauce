@@ -23,6 +23,7 @@ OpenSauce/
 ├── Ruby/
 ├── PHP/
 ├── Dart/
+├── Haskell/
 └── Scala/
 ```
 
