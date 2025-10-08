@@ -7,7 +7,6 @@ class Node:
         self.prev = None
         self.next = None
 
-
 class DoublyLinkedList:
     """Implementation of a Doubly Linked List in Python."""
 
