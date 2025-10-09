@@ -1,0 +1,73 @@
+public class KokoEatingBananas {
+
+    /**
+     * 🍌 Problem: Koko Eating Bananas
+     * 
+     * Koko loves bananas. She has 'n' piles of bananas, where the i-th pile has piles[i] bananas.
+     * 
+     * The guards have gone and will come back in 'h' hours. Koko can decide her eating speed 'k' 
+     * (bananas per hour). Each hour, she chooses one pile and eats up to 'k' bananas. 
+     * If the pile has less than 'k', she eats the whole pile and won't continue eating from another pile in the same hour.
+     * 
+     * We need to find the minimum integer eating speed 'k' such that Koko can eat all bananas within 'h' hours.
+     * 
+     * ✅ Example:
+     * piles = [3, 6, 7, 11], h = 8
+     * 
+     * Try k = 4:
+     *   Pile 3 -> needs 1 hr
+     *   Pile 6 -> needs 2 hrs
+     *   Pile 7 -> needs 2 hrs
+     *   Pile 11 -> needs 3 hrs
+     *   Total = 8 hrs ✅ (possible)
+     * 
+     * Answer = 4
+     */
+
+    public int minEatingSpeed(int[] piles, int h) {
+
+        int low = 1, high = 1;
+
+        // Find maximum pile (upper bound of eating speed)
+        for (int i = 0; i < piles.length; i++)
+            high = Math.max(high, piles[i]);
+
+        // Binary search for minimum possible speed
+        while (low < high) {
+            int mid = low + (high - low) / 2;
+
+            if (canEatAllBananas(piles, h, mid)) {
+                high = mid; // try smaller speed
+            } else {
+                low = mid + 1; // need faster speed
+            }
+        }
+
+        return low; // minimum speed
+    }
+
+    // Helper: check if Koko can finish all bananas at speed k within h hours
+    public boolean canEatAllBananas(int[] piles, int h, int k) {
+        int time = 0;
+
+        for (int i = 0; i < piles.length; i++) {
+            time += (piles[i] / k);
+            if (piles[i] % k != 0)
+                time += 1; // if not divisible, need extra hour
+        }
+
+        return time <= h;
+    }
+
+    // Main method for testing
+    public static void main(String[] args) {
+        KokoEatingBananas obj = new KokoEatingBananas();
+
+        int[] piles = {3, 6, 7, 11};
+        int h = 8;
+
+        System.out.println("Piles: [3, 6, 7, 11], Hours = 8");
+        int result = obj.minEatingSpeed(piles, h);
+        System.out.println("Minimum eating speed = " + result); // Expected: 4
+    }
+}
