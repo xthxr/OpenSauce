@@ -169,7 +169,7 @@ jobs:
               issue_number: pr.number,
               body: isValid
                 ? '✅ Code validation passed! All checks OK.'
-                : '## ❌ Code Validation Failed\n\n' + validationMessage
+                : '## ⚠️ Code validation failed\n\n' + validationMessage
             });
 
             if (!isInternal) {
@@ -200,14 +200,5 @@ jobs:
                 merge_method: 'squash',
                 commit_title: `${pr.title} (#${pr.number})`,
                 commit_message: `Auto-merged after validation.`
-              });
-            } else {
-              // Request changes
-              await github.rest.pulls.createReview({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: pr.number,
-                event: 'REQUEST_CHANGES',
-                body: '❌ Validation failed — please fix the issues mentioned above.'
               });
             }
