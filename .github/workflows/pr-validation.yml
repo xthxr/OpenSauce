@@ -12,8 +12,6 @@ permissions:
 jobs:
   validate-pr:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
 
     steps:
       - name: Checkout PR code
@@ -154,7 +152,7 @@ jobs:
             core.setOutput('is_valid', isValid ? 'true' : 'false');
             core.setOutput('validation_message', isValid ? '✅ All checks passed!' : validationErrors.join('\n'));
 
-      - name: Approve PR (fork-safe)
+      - name: Approve PR (if valid)
         if: steps.validation.outputs.is_valid == 'true'
         uses: actions/github-script@v7
         with:
@@ -167,14 +165,13 @@ jobs:
                 repo: context.repo.repo,
                 pull_number: pr.number,
                 event: 'APPROVE',
-                body: '✅ Code validation passed! This PR meets all quality standards.'
+                body: '✅ Code validation passed!'
               });
-              console.log('✅ PR approved');
             } catch (err) {
-              console.log("⚠️ Skipping PR review — fork or permission issue.");
+              console.log("⚠️ Skipping PR approval due to permission/fork restrictions.");
             }
 
-      - name: Add Hacktoberfest labels (fork-safe)
+      - name: Add labels (if valid)
         if: steps.validation.outputs.is_valid == 'true'
         uses: actions/github-script@v7
         with:
@@ -188,12 +185,11 @@ jobs:
                 issue_number: pr.number,
                 labels: ['Hacktoberfest', 'Hacktoberfest-accepted']
               });
-              console.log('✅ Labels added');
             } catch (err) {
-              console.log("⚠️ Skipping labels — fork or permission issue.");
+              console.log("⚠️ Skipping labels due to permission/fork restrictions.");
             }
 
-      - name: Auto-merge PR (fork-safe)
+      - name: Auto-merge PR (if valid)
         if: steps.validation.outputs.is_valid == 'true'
         uses: actions/github-script@v7
         with:
@@ -207,11 +203,10 @@ jobs:
                 pull_number: pr.number,
                 merge_method: 'squash',
                 commit_title: `${pr.title} (#${pr.number})`,
-                commit_message: `Auto-merged after passing validation.\n\n${pr.body || ''}`
+                commit_message: `Auto-merged after validation.`
               });
-              console.log('✅ PR merged successfully');
             } catch (err) {
-              console.log("⚠️ Skipping auto-merge — fork or permission issue.");
+              console.log("⚠️ Skipping auto-merge due to permission/fork restrictions.");
             }
 
       - name: Request changes if invalid
@@ -236,7 +231,6 @@ jobs:
                 event: 'REQUEST_CHANGES',
                 body: '❌ Validation failed — please fix the issues mentioned above.'
               });
-              console.log('✅ Requested changes on invalid PR');
             } catch (err) {
-              console.log("⚠️ Could not request changes — fork or permission issue.");
+              console.log("⚠️ Could not request changes due to permission/fork restrictions.");
             }
