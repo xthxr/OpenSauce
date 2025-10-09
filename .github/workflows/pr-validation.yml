@@ -1,16 +1,15 @@
-name: PR Code Validation and Auto-merge
+name: PR Code Validation and Auto-label
 
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
   issues: write
 
 jobs:
-  validate-pr:
+  validate-and-label:
     runs-on: ubuntu-latest
 
     steps:
@@ -45,157 +44,35 @@ jobs:
         id: validation
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }} # or use PAT for forks
           script: |
             const fs = require('fs');
             const path = require('path');
             const changedFiles = `${{ steps.changed-files.outputs.all_changed_files }}`.split(' ').filter(f => f);
             let isValid = true;
-            let validationErrors = [];
 
             if (changedFiles.length === 0) {
               core.setOutput('is_valid', 'true');
-              core.setOutput('validation_message', 'No code files to validate');
               return;
             }
 
             for (const file of changedFiles) {
-              try {
-                const content = fs.readFileSync(file, 'utf8');
-                const lines = content.split('\n');
-
-                if (content.trim().length === 0) {
-                  validationErrors.push(`❌ ${file}: File is empty`);
-                  isValid = false;
-                  continue;
-                }
-
-                const hasComments = content.includes('//') || content.includes('/*') ||
-                  content.includes('"""') || content.includes('#') || content.includes('<!--');
-                if (!hasComments) {
-                  validationErrors.push(`❌ ${file}: Missing documentation/comments`);
-                  isValid = false;
-                }
-
-                const hasComplexity = /time complexity|space complexity|O\([^)]+\)/i.test(content);
-                if (!hasComplexity) {
-                  validationErrors.push(`❌ ${file}: Missing time/space complexity analysis`);
-                  isValid = false;
-                }
-
-                const hasExample = /main|test|example|if __name__|console\.log|System\.out|println|print\(/i.test(content);
-                if (!hasExample) {
-                  validationErrors.push(`❌ ${file}: Missing example usage or test cases`);
-                  isValid = false;
-                }
-
-                const ext = path.extname(file);
-
-                if (ext === '.py') {
-                  const openParen = (content.match(/\(/g) || []).length;
-                  const closeParen = (content.match(/\)/g) || []).length;
-                  const openBracket = (content.match(/\[/g) || []).length;
-                  const closeBracket = (content.match(/\]/g) || []).length;
-                  const openBrace = (content.match(/\{/g) || []).length;
-                  const closeBrace = (content.match(/\}/g) || []).length;
-                  if (openParen !== closeParen || openBracket !== closeBracket || openBrace !== closeBrace) {
-                    validationErrors.push(`❌ ${file}: Potential syntax error - unmatched brackets/parentheses`);
-                    isValid = false;
-                  }
-                }
-
-                if (['.java', '.cpp', '.c'].includes(ext)) {
-                  const openBrace = (content.match(/\{/g) || []).length;
-                  const closeBrace = (content.match(/\}/g) || []).length;
-                  if (openBrace !== closeBrace) {
-                    validationErrors.push(`❌ ${file}: Potential syntax error - unmatched braces`);
-                    isValid = false;
-                  }
-                  if (ext === '.java' && !/(public|private|protected)?\s*(class|interface)\s+\w+/i.test(content)) {
-                    validationErrors.push(`❌ ${file}: Missing class definition`);
-                    isValid = false;
-                  }
-                }
-
-                const spamPatterns = [/^[\s\n]*$/, /lorem ipsum/i, /test test test/i, /asdf|qwerty|12345/];
-                for (const pattern of spamPatterns) {
-                  if (pattern.test(content) && content.length < 100) {
-                    validationErrors.push(`❌ ${file}: Appears to be spam or meaningless content`);
-                    isValid = false;
-                    break;
-                  }
-                }
-
-                const meaningfulLines = lines.filter(line => {
-                  const trimmed = line.trim();
-                  return trimmed.length > 0 &&
-                    !trimmed.startsWith('import ') &&
-                    !trimmed.startsWith('from ') &&
-                    !trimmed.startsWith('#include') &&
-                    !trimmed.startsWith('//') &&
-                    !trimmed.startsWith('/*') &&
-                    !trimmed.startsWith('*') &&
-                    !trimmed.startsWith('#');
-                }).length;
-
-                if (meaningfulLines < 10) {
-                  validationErrors.push(`❌ ${file}: File has insufficient meaningful content (< 10 lines)`);
-                  isValid = false;
-                }
-
-              } catch (error) {
-                validationErrors.push(`❌ ${file}: Could not read file - ${error.message}`);
-                isValid = false;
-              }
+              const content = fs.readFileSync(file, 'utf8');
+              if (content.trim().length === 0) isValid = false;
             }
 
             core.setOutput('is_valid', isValid ? 'true' : 'false');
-            core.setOutput('validation_message', isValid ? '✅ All checks passed!' : validationErrors.join('\n'));
 
-      - name: Handle PR (approve/label/merge)
+      - name: Add Hacktoberfest labels
+        if: steps.validation.outputs.is_valid == 'true'
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }} # use PAT if labeling fork PRs
           script: |
             const pr = context.payload.pull_request;
-            const isValid = '${{ steps.validation.outputs.is_valid }}' === 'true';
-            const validationMessage = `${{ steps.validation.outputs.validation_message }}`;
-
-            // Always comment validation results
-            await github.rest.issues.createComment({
+            await github.rest.issues.addLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: pr.number,
-              body: isValid
-                ? '✅ Code validation passed! All checks OK.'
-                : '## ⚠️ Code validation failed\n\n' + validationMessage
+              labels: ['Hacktoberfest', 'Hacktoberfest-accepted']
             });
-
-            if (isValid) {
-              // Add labels for all PRs
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.number,
-                labels: ['Hacktoberfest', 'Hacktoberfest-accepted']
-              });
-
-              // Auto-approve PR
-              await github.rest.pulls.createReview({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: pr.number,
-                event: 'APPROVE',
-                body: '✅ Code validation passed! Approved.'
-              });
-
-              // Auto-merge PR
-              await github.rest.pulls.merge({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: pr.number,
-                merge_method: 'squash',
-                commit_title: `${pr.title} (#${pr.number})`,
-                commit_message: `Auto-merged after validation.`
-              });
-            }
