@@ -198,8 +198,11 @@ jobs:
 
       - name: Add labels and approve if valid
         if: steps.validation.outputs.is_valid == 'true'
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         uses: actions/github-script@v7
         with:
+          github-token: ${{ env.GH_PAT }}
           script: |
             const pr = context.payload.pull_request;
             
@@ -234,8 +237,11 @@ jobs:
 
       - name: Auto-merge PR if valid
         if: steps.validation.outputs.is_valid == 'true'
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         uses: actions/github-script@v7
         with:
+          github-token: ${{ env.GH_PAT }}
           script: |
             const pr = context.payload.pull_request;
             
@@ -257,8 +263,11 @@ jobs:
 
       - name: Request changes if invalid
         if: steps.validation.outputs.is_valid == 'false'
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         uses: actions/github-script@v7
         with:
+          github-token: ${{ env.GH_PAT }}
           script: |
             const pr = context.payload.pull_request;
             const validationMessage = `${{ steps.validation.outputs.validation_message }}`;
