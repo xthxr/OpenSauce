@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
 
     steps:
-      - name: Checkout code
+      - name: Checkout PR code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -47,10 +47,10 @@ jobs:
         id: validation
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GH_PAT }}
           script: |
             const fs = require('fs');
             const path = require('path');
-
             const changedFiles = `${{ steps.changed-files.outputs.all_changed_files }}`.split(' ').filter(f => f);
             let isValid = true;
             let validationErrors = [];
@@ -72,9 +72,8 @@ jobs:
                   continue;
                 }
 
-                const hasComments = content.includes('//') || content.includes('/*') || 
-                                   content.includes('"""') || content.includes('#') ||
-                                   content.includes('<!--');
+                const hasComments = content.includes('//') || content.includes('/*') ||
+                  content.includes('"""') || content.includes('#') || content.includes('<!--');
                 if (!hasComments) {
                   validationErrors.push(`❌ ${file}: Missing documentation/comments`);
                   isValid = false;
@@ -120,12 +119,7 @@ jobs:
                   }
                 }
 
-                const spamPatterns = [
-                  /^[\s\n]*$/,
-                  /lorem ipsum/i,
-                  /test test test/i,
-                  /asdf|qwerty|12345/
-                ];
+                const spamPatterns = [/^[\s\n]*$/, /lorem ipsum/i, /test test test/i, /asdf|qwerty|12345/];
                 for (const pattern of spamPatterns) {
                   if (pattern.test(content) && content.length < 100) {
                     validationErrors.push(`❌ ${file}: Appears to be spam or meaningless content`);
@@ -136,14 +130,14 @@ jobs:
 
                 const meaningfulLines = lines.filter(line => {
                   const trimmed = line.trim();
-                  return trimmed.length > 0 && 
-                         !trimmed.startsWith('import ') &&
-                         !trimmed.startsWith('from ') &&
-                         !trimmed.startsWith('#include') &&
-                         !trimmed.startsWith('//') &&
-                         !trimmed.startsWith('/*') &&
-                         !trimmed.startsWith('*') &&
-                         !trimmed.startsWith('#');
+                  return trimmed.length > 0 &&
+                    !trimmed.startsWith('import ') &&
+                    !trimmed.startsWith('from ') &&
+                    !trimmed.startsWith('#include') &&
+                    !trimmed.startsWith('//') &&
+                    !trimmed.startsWith('/*') &&
+                    !trimmed.startsWith('*') &&
+                    !trimmed.startsWith('#');
                 }).length;
 
                 if (meaningfulLines < 10) {
@@ -159,13 +153,9 @@ jobs:
 
             core.setOutput('is_valid', isValid ? 'true' : 'false');
             core.setOutput('validation_message', isValid ? '✅ All checks passed!' : validationErrors.join('\n'));
-            fs.writeFileSync(process.env.GITHUB_STEP_SUMMARY, 
-              (isValid ? '✅ **Code Validation Passed!** 🎉' : '❌ **Code Validation Failed!**') +
-              '\n\n' + validationErrors.join('\n')
-            )
 
-      - name: Approve PR (Safe for forks)
-        if: steps.validation.outputs.is_valid == 'true' && github.event.pull_request.draft == false
+      - name: Approve PR (fork-safe)
+        if: steps.validation.outputs.is_valid == 'true'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GH_PAT }}
@@ -180,12 +170,11 @@ jobs:
                 body: '✅ Code validation passed! This PR meets all quality standards.'
               });
               console.log('✅ PR approved');
-            } catch (error) {
-              console.log("⚠️ Skipping PR review — insufficient permissions or forked PR.");
-              console.log(error.message);
+            } catch (err) {
+              console.log("⚠️ Skipping PR review — fork or permission issue.");
             }
 
-      - name: Add Hacktoberfest labels (Safe for forks)
+      - name: Add Hacktoberfest labels (fork-safe)
         if: steps.validation.outputs.is_valid == 'true'
         uses: actions/github-script@v7
         with:
@@ -200,13 +189,12 @@ jobs:
                 labels: ['Hacktoberfest', 'Hacktoberfest-accepted']
               });
               console.log('✅ Labels added');
-            } catch (error) {
-              console.log("⚠️ Could not add labels — likely permission issue.");
-              console.log(error.message);
+            } catch (err) {
+              console.log("⚠️ Skipping labels — fork or permission issue.");
             }
 
-      - name: Auto-merge PR if valid
-        if: steps.validation.outputs.is_valid == 'true' && github.event.pull_request.draft == false
+      - name: Auto-merge PR (fork-safe)
+        if: steps.validation.outputs.is_valid == 'true'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GH_PAT }}
@@ -222,9 +210,8 @@ jobs:
                 commit_message: `Auto-merged after passing validation.\n\n${pr.body || ''}`
               });
               console.log('✅ PR merged successfully');
-            } catch (error) {
-              console.log("⚠️ Skipping auto-merge — likely permission issue or conflicts.");
-              console.log(error.message);
+            } catch (err) {
+              console.log("⚠️ Skipping auto-merge — fork or permission issue.");
             }
 
       - name: Request changes if invalid
@@ -250,7 +237,6 @@ jobs:
                 body: '❌ Validation failed — please fix the issues mentioned above.'
               });
               console.log('✅ Requested changes on invalid PR');
-            } catch (error) {
-              console.log("⚠️ Could not comment/request changes — permission issue.");
-              console.log(error.message);
+            } catch (err) {
+              console.log("⚠️ Could not request changes — fork or permission issue.");
             }
