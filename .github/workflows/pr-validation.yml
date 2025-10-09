@@ -158,7 +158,6 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const pr = context.payload.pull_request;
-            const isInternal = pr.head.repo.full_name === pr.base.repo.full_name;
             const isValid = '${{ steps.validation.outputs.is_valid }}' === 'true';
             const validationMessage = `${{ steps.validation.outputs.validation_message }}`;
 
@@ -172,10 +171,16 @@ jobs:
                 : '## ⚠️ Code validation failed\n\n' + validationMessage
             });
 
-            if (!isInternal) {
-              console.log("⚠️ PR is from a fork, skipping approval/merge/labels.");
-            } else if (isValid) {
-              // Approve
+            if (isValid) {
+              // Add labels for all PRs
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: ['Hacktoberfest', 'Hacktoberfest-accepted']
+              });
+
+              // Auto-approve PR
               await github.rest.pulls.createReview({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -184,15 +189,7 @@ jobs:
                 body: '✅ Code validation passed! Approved.'
               });
 
-              // Add labels
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.number,
-                labels: ['Hacktoberfest', 'Hacktoberfest-accepted']
-              });
-
-              // Auto-merge
+              // Auto-merge PR
               await github.rest.pulls.merge({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
