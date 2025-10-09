@@ -152,51 +152,47 @@ jobs:
             core.setOutput('is_valid', isValid ? 'true' : 'false');
             core.setOutput('validation_message', isValid ? '✅ All checks passed!' : validationErrors.join('\n'));
 
-      - name: Approve PR (if valid)
-        if: steps.validation.outputs.is_valid == 'true'
+      - name: Handle PR (approve/label/merge)
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GH_PAT }}
           script: |
             const pr = context.payload.pull_request;
-            try {
+            const isInternal = pr.head.repo.full_name === pr.base.repo.full_name;
+            const isValid = '${{ steps.validation.outputs.is_valid }}' === 'true';
+            const validationMessage = `${{ steps.validation.outputs.validation_message }}`;
+
+            // Always comment validation results
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: isValid
+                ? '✅ Code validation passed! All checks OK.'
+                : '## ❌ Code Validation Failed\n\n' + validationMessage
+            });
+
+            if (!isInternal) {
+              console.log("⚠️ PR is from a fork, skipping approval/merge/labels.");
+            } else if (isValid) {
+              // Approve
               await github.rest.pulls.createReview({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 pull_number: pr.number,
                 event: 'APPROVE',
-                body: '✅ Code validation passed!'
+                body: '✅ Code validation passed! Approved.'
               });
-            } catch (err) {
-              console.log("⚠️ Skipping PR approval due to permission/fork restrictions.");
-            }
 
-      - name: Add labels (if valid)
-        if: steps.validation.outputs.is_valid == 'true'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GH_PAT }}
-          script: |
-            const pr = context.payload.pull_request;
-            try {
+              // Add labels
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: pr.number,
                 labels: ['Hacktoberfest', 'Hacktoberfest-accepted']
               });
-            } catch (err) {
-              console.log("⚠️ Skipping labels due to permission/fork restrictions.");
-            }
 
-      - name: Auto-merge PR (if valid)
-        if: steps.validation.outputs.is_valid == 'true'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GH_PAT }}
-          script: |
-            const pr = context.payload.pull_request;
-            try {
+              // Auto-merge
               await github.rest.pulls.merge({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -205,25 +201,8 @@ jobs:
                 commit_title: `${pr.title} (#${pr.number})`,
                 commit_message: `Auto-merged after validation.`
               });
-            } catch (err) {
-              console.log("⚠️ Skipping auto-merge due to permission/fork restrictions.");
-            }
-
-      - name: Request changes if invalid
-        if: steps.validation.outputs.is_valid == 'false'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GH_PAT }}
-          script: |
-            const pr = context.payload.pull_request;
-            const validationMessage = `${{ steps.validation.outputs.validation_message }}`;
-            try {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.number,
-                body: '## ❌ Code Validation Failed\n\n' + validationMessage
-              });
+            } else {
+              // Request changes
               await github.rest.pulls.createReview({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -231,6 +210,4 @@ jobs:
                 event: 'REQUEST_CHANGES',
                 body: '❌ Validation failed — please fix the issues mentioned above.'
               });
-            } catch (err) {
-              console.log("⚠️ Could not request changes due to permission/fork restrictions.");
             }
