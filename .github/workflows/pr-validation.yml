@@ -1,0 +1,261 @@
+name: PR Code Validation and Auto-merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  validate-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v40
+        with:
+          files: |
+            **/*.py
+            **/*.java
+            **/*.cpp
+            **/*.c
+            **/*.js
+            **/*.ts
+            **/*.go
+            **/*.rs
+            **/*.rb
+            **/*.php
+            **/*.swift
+            **/*.kt
+            **/*.scala
+            **/*.dart
+            **/*.hs
+
+      - name: Validate code quality
+        id: validation
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const core = require('@actions/core');
+
+            const changedFiles = `${{ steps.changed-files.outputs.all_changed_files }}`.split(' ').filter(f => f);
+
+            if (changedFiles.length === 0) {
+              console.log('No code files changed in this PR');
+              core.setOutput('is_valid', 'true');
+              core.setOutput('validation_message', 'No code files to validate');
+              return;
+            }
+
+            console.log('Changed files:', changedFiles);
+
+            let isValid = true;
+            let validationErrors = [];
+
+            for (const file of changedFiles) {
+              if (!file) continue;
+
+              console.log(`\nValidating: ${file}`);
+
+              try {
+                const content = fs.readFileSync(file, 'utf8');
+                const lines = content.split('\n');
+
+                if (content.trim().length === 0) {
+                  validationErrors.push(`❌ ${file}: File is empty`);
+                  isValid = false;
+                  continue;
+                }
+
+                const hasComments = content.includes('//') || content.includes('/*') || 
+                                   content.includes('"""') || content.includes('#') ||
+                                   content.includes('<!--');
+                if (!hasComments) {
+                  validationErrors.push(`❌ ${file}: Missing documentation/comments`);
+                  isValid = false;
+                }
+
+                const hasComplexity = /time complexity|space complexity|O\([^)]+\)/i.test(content);
+                if (!hasComplexity) {
+                  validationErrors.push(`❌ ${file}: Missing time/space complexity analysis`);
+                  isValid = false;
+                }
+
+                const hasExample = /main|test|example|if __name__|console\.log|System\.out|println|print\(/i.test(content);
+                if (!hasExample) {
+                  validationErrors.push(`❌ ${file}: Missing example usage or test cases`);
+                  isValid = false;
+                }
+
+                const ext = path.extname(file);
+
+                if (ext === '.py') {
+                  const openParen = (content.match(/\(/g) || []).length;
+                  const closeParen = (content.match(/\)/g) || []).length;
+                  const openBracket = (content.match(/\[/g) || []).length;
+                  const closeBracket = (content.match(/\]/g) || []).length;
+                  const openBrace = (content.match(/\{/g) || []).length;
+                  const closeBrace = (content.match(/\}/g) || []).length;
+
+                  if (openParen !== closeParen || openBracket !== closeBracket || openBrace !== closeBrace) {
+                    validationErrors.push(`❌ ${file}: Potential syntax error - unmatched brackets/parentheses`);
+                    isValid = false;
+                  }
+                }
+
+                if (['.java', '.cpp', '.c'].includes(ext)) {
+                  const openBrace = (content.match(/\{/g) || []).length;
+                  const closeBrace = (content.match(/\}/g) || []).length;
+
+                  if (openBrace !== closeBrace) {
+                    validationErrors.push(`❌ ${file}: Potential syntax error - unmatched braces`);
+                    isValid = false;
+                  }
+
+                  if (ext === '.java' && !/(public|private|protected)?\s*(class|interface)\s+\w+/i.test(content)) {
+                    validationErrors.push(`❌ ${file}: Missing class definition`);
+                    isValid = false;
+                  }
+                }
+
+                const spamPatterns = [
+                  /^[\s\n]*$/,
+                  /lorem ipsum/i,
+                  /test test test/i,
+                  /asdf|qwerty|12345/
+                ];
+
+                for (const pattern of spamPatterns) {
+                  if (pattern.test(content) && content.length < 100) {
+                    validationErrors.push(`❌ ${file}: Appears to be spam or meaningless content`);
+                    isValid = false;
+                    break;
+                  }
+                }
+
+                const meaningfulLines = lines.filter(line => {
+                  const trimmed = line.trim();
+                  return trimmed.length > 0 && 
+                         !trimmed.startsWith('import ') &&
+                         !trimmed.startsWith('from ') &&
+                         !trimmed.startsWith('#include') &&
+                         !trimmed.startsWith('//') &&
+                         !trimmed.startsWith('/*') &&
+                         !trimmed.startsWith('*') &&
+                         !trimmed.startsWith('#');
+                }).length;
+
+                if (meaningfulLines < 10) {
+                  validationErrors.push(`❌ ${file}: File has insufficient meaningful content (< 10 lines)`);
+                  isValid = false;
+                }
+
+                if (isValid) {
+                  console.log(`✅ ${file}: Passed validation`);
+                }
+
+              } catch (error) {
+                console.error(`Error reading ${file}:`, error.message);
+                validationErrors.push(`❌ ${file}: Could not read file - ${error.message}`);
+                isValid = false;
+              }
+            }
+
+            core.setOutput('is_valid', isValid ? 'true' : 'false');
+
+            if (isValid) {
+              core.setOutput('validation_message', '✅ All code quality checks passed!');
+            } else {
+              const errorMessage = 'Code validation failed:\n\n' + validationErrors.join('\n');
+              core.setOutput('validation_message', errorMessage);
+            }
+
+            return isValid;
+
+      - name: Add labels and approve if valid
+        if: steps.validation.outputs.is_valid == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: ['Hacktoberfest', 'Hacktoberfest-accepted']
+              });
+              console.log('✅ Added Hacktoberfest labels');
+            } catch (error) {
+              console.log('Note: Labels may not exist. Error:', error.message);
+            }
+
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              event: 'APPROVE',
+              body: '✅ Code validation passed! Approved for merge!'
+            });
+
+      - name: Auto-merge PR if valid
+        if: steps.validation.outputs.is_valid == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            try {
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                merge_method: 'squash',
+                commit_title: `${pr.title} (#${pr.number})`,
+                commit_message: `Automatically merged after passing code validation checks.\n\n${pr.body || ''}`
+              });
+              console.log('✅ PR merged successfully');
+            } catch (error) {
+              console.log('Could not auto-merge PR:', error.message);
+            }
+
+      - name: Request changes if invalid
+        if: steps.validation.outputs.is_valid == 'false'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const validationMessage = `${{ steps.validation.outputs.validation_message }}`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: '## ❌ Your code is incorrect\n\n' +
+                    '### Issues Found:\n\n' +
+                    validationMessage + '\n\n' +
+                    'Please review CONTRIBUTING.md and fix the issues. 🔄'
+            });
+
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              event: 'REQUEST_CHANGES',
+              body: '❌ Code validation failed. Please address the issues mentioned above.'
+            });
+            console.log('✅ Requested changes on PR');
