@@ -7,6 +7,7 @@ on:
 permissions:
   contents: read
   statuses: write
+  checks: write
 
 jobs:
   validate:
@@ -46,7 +47,9 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
+            const pr = context.payload.pull_request;
             const changedFiles = `${{ steps.changed.outputs.all_changed_files }}`.split(' ').filter(f => f);
+            let invalidFiles = [];
             let isValid = true;
 
             if (changedFiles.length === 0) {
@@ -54,15 +57,40 @@ jobs:
             } else {
               for (const file of changedFiles) {
                 const content = fs.readFileSync(file, 'utf8');
-                if (content.trim().length === 0) isValid = false;
+                if (content.trim().length === 0) {
+                  invalidFiles.push(file);
+                  isValid = false;
+                }
               }
             }
 
+            const conclusion = isValid ? 'success' : 'failure';
+            const summary = isValid
+              ? '✅ All files passed validation.'
+              : `❌ Found empty/invalid files:\n\n${invalidFiles.map(f => '- ' + f).join('\n')}`;
+
+            // Create GitHub Check summary
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Code Validation',
+              head_sha: pr.head.sha,
+              status: 'completed',
+              conclusion: conclusion,
+              output: {
+                title: 'PR Code Validation Results',
+                summary: summary
+              }
+            });
+
+            // Also set a commit status (used by auto-label.yml)
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              sha: context.payload.pull_request.head.sha,
+              sha: pr.head.sha,
               state: isValid ? 'success' : 'failure',
               context: 'PR Code Validation',
-              description: isValid ? '✅ Code validation passed' : '❌ Found empty or invalid file(s)'
+              description: isValid ? '✅ Code validation passed' : '❌ Validation failed'
             });
+
+            core.setOutput('is_valid', isValid ? 'true' : 'false');
