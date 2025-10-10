@@ -66,7 +66,6 @@ void printList(struct Node* head) {
     printf("\n");
 }
 
-
 // Main function
 int main() {
     struct Node* head = NULL;
