@@ -1,18 +1,36 @@
-name: Auto Label Hacktoberfest PRs
+name: Auto Label Valid Hacktoberfest PRs
 
 on:
   pull_request:
-    types: [opened]
+    types: [opened, reopened, synchronize]
 
 permissions:
-  issues: write
   pull-requests: write
+  issues: write
+  contents: read
 
 jobs:
   add-labels:
     runs-on: ubuntu-latest
+
     steps:
+      - name: Check validation status
+        id: check
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const statuses = await github.rest.repos.listCommitStatusesForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: pr.head.sha
+            });
+            const validation = statuses.data.find(s => s.context === 'PR Code Validation');
+            core.setOutput('is_valid', validation && validation.state === 'success' ? 'true' : 'false');
+
       - name: Add Hacktoberfest labels
+        if: steps.check.outputs.is_valid == 'true'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -23,4 +41,32 @@ jobs:
               repo: context.repo.repo,
               issue_number: pr.number,
               labels: ['Hacktoberfest', 'Hacktoberfest-accepted']
+            });
+
+      - name: Comment success
+        if: steps.check.outputs.is_valid == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: "✅ **Code validation passed!**\n\nYour PR has been labeled for Hacktoberfest 🎉\n\nThanks for contributing 💖"
+            });
+
+      - name: Comment failure
+        if: steps.check.outputs.is_valid != 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: "❌ **Code validation failed.**\n\nPlease make sure your code files are not empty and follow the repository's contribution rules."
             });
