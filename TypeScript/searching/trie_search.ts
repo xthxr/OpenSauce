@@ -1,6 +1,6 @@
 /**
  * @fileoverview Implements a Trie (Prefix Tree) data structure for efficient word storage and lookup.
- * @author Dimaswahyu-official
+ * @author dimaswahyu-official
  */
 
 /**
