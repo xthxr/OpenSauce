@@ -6,9 +6,11 @@ This repository is dedicated to **Data Structures and Algorithms (DSA)** impleme
 
 ## 🌐 Live Project
 
+Explore our interactive website to browse through all DSA implementations by programming language, view contributors, and navigate the repository structure with ease!
+
 **🔗 [View Live Project](https://opensaucedsarepo.netlify.app/)**
 
-Explore our interactive website to browse through all DSA implementations by programming language, view contributors, and navigate the repository structure with ease!
+
 
 ## 📁 Repository Structure
 
