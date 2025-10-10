@@ -1,0 +1,73 @@
+import java.util.*;
+
+/**
+ * Problem: Binary Tree Preorder Traversal
+ * 
+ * Given the root of a binary tree, return the preorder traversal of its nodes' values.
+ * 
+ * Preorder Traversal means:
+ *   1. Visit the root node
+ *   2. Traverse the left subtree
+ *   3. Traverse the right subtree
+ * 
+ * Example:
+ * Input: 
+ *        1
+ *         \
+ *          2
+ *         /
+ *        3
+ * 
+ * Output: [1, 2, 3]
+ * 
+ * Explanation:
+ *   - Start at root: 1 → add to list
+ *   - Go left (null, so skip)
+ *   - Go right → node 2 → add to list
+ *   - Go left of 2 → node 3 → add to list
+ *   - Final preorder = [1, 2, 3]
+ */
+
+public class PreOrderTraversal {
+    
+    // List to store preorder traversal
+    List<Integer> l = new ArrayList<>();
+        
+    public List<Integer> preorderTraversal(TreeNode root) {
+        if (root == null) return l;
+
+        Stack<TreeNode> s = new Stack<>();
+        s.push(root);
+
+        while (!s.isEmpty()) {
+            TreeNode curr = s.pop();
+            l.add(curr.val);
+
+            // Push right first so left is processed first
+            if (curr.right != null) s.push(curr.right);
+            if (curr.left != null) s.push(curr.left);
+        }
+        return l;
+    }
+
+    // Helper method to build sample tree and test traversal
+    public static void main(String[] args) {
+      
+        TreeNode root = new TreeNode(1);
+        root.right = new TreeNode(2);
+        root.right.left = new TreeNode(3);
+
+        PreorderTraversal obj = new PreorderTraversal();
+        List<Integer> result = obj.preorderTraversal(root);
+
+        System.out.println("Preorder Traversal: " + result); // Expected: [1, 2, 3]
+    }
+}
+
+// Definition for a binary tree node.
+class TreeNode {
+    int val;
+    TreeNode left;
+    TreeNode right;
+    TreeNode(int val) { this.val = val; }
+}

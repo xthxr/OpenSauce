@@ -1,103 +1,87 @@
-/*
- * File: heap_sort.c
- * Description: Implementation of Heap Sort algorithm in C
- * Author: VancentH
- * Date: 2025-10-10
- *
- * Algorithm:
- *   - Heap Sort builds a max-heap from the array, then repeatedly 
- *     swaps the root with the last element and reduces the heap 
- *     size until sorted.
- * 
- * Steps:
- *   1. Build a max heap from the input array
- *   2. Swap the root (largest element) with the last element
- *   3. Reduce heap size by one and heapify the root
- *   4. Repeat until the heap is empty
- * 
- * Time Complexity:
- *   - Best Case: O(n log n)
- *   - Average Case: O(n log n)
- *   - Worst Case: O(n log n)
- *
- * Space Complexity: O(1) (in-place sorting)
- * Stability: Not stable
- *
- * Example Usage:
- *   Input:  arr = [65, 11115, 48, 3, 233, 1, 2233]
- *   Output: arr = [1, 3, 48, 65, 233, 2233, 11115]
- */
-
 #include <stdio.h>
 
-// Swap two integer values
-void swap(int *a, int *b)
-{
-  int temp = *a;
-  *a = *b;
-  *b = temp;
+/*
+ * File: heap_sort.c
+ * Description: Heap Sort Algorithm in C
+ *
+ * Algorithm:
+ *   - Builds a max heap and sorts the array in ascending order.
+ *
+ * Time Complexity:
+ *   - Building the heap: O(n)
+ *   - Heap operations: O(log n) each
+ *   - Total: O(n log n)
+ *
+ * Space Complexity: O(1)
+ *
+ * Example Usage:
+ *   Input: arr = [12, 11, 13, 5, 6, 7]
+ *   Output: [5, 6, 7, 11, 12, 13]
+ */
+
+/* Swap two integers by pointer */
+void swap(int *a, int *b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
 }
 
-// Heapify function: maintains the heap property
-void heapify(int arr[], int heapSize, int parentIndex)
-{
-  int largest = parentIndex;            // Initialize largest as parent node
-  int leftChild = 2 * parentIndex + 1;  // Left child index
-  int rightChild = 2 * parentIndex + 2; // Right child index
+/* 
+ * maxHeap: ensures the max-heap property for a given subtree 
+ * root: index of the current node
+ * n: size of the heap
+ */
+void maxHeap(int arr[], int n, int root) {
+    int largest = root;
+    int left = 2 * root + 1;
+    int right = 2 * root + 2;
 
-  // If left child is larger than parent
-  if (leftChild < heapSize && arr[leftChild] > arr[largest])
-    largest = leftChild;
+    if (left < n && arr[left] > arr[largest])
+        largest = left;
 
-  // If right child is larger than current largest
-  if (rightChild < heapSize && arr[rightChild] > arr[largest])
-    largest = rightChild;
+    if (right < n && arr[right] > arr[largest])
+        largest = right;
 
-  // If largest is not parent
-  if (largest != parentIndex)
-  {
-    swap(&arr[parentIndex], &arr[largest]);
-    // Recursively heapify the affected sub-tree
-    heapify(arr, heapSize, largest);
-  }
+    if (largest != root) {
+        swap(&arr[root], &arr[largest]);
+        maxHeap(arr, n, largest);
+    }
 }
 
-// Heap sort main function
-void heapSort(int arr[], int n)
-{
-  // Build max heap (rearrange array)
-  for (int i = n / 2 - 1; i >= 0; i--)
-    heapify(arr, n, i);
+/* 
+ * heapSort: builds a max heap and sorts the array
+ */
+void heapSort(int arr[], int n) {
+    // Build max heap
+    for (int i = n / 2 - 1; i >= 0; i--)
+        maxHeap(arr, n, i);
 
-  // Extract elements from heap one by one
-  for (int i = n - 1; i >= 0; i--)
-  {
-    swap(&arr[0], &arr[i]); // Move current root to end
-    heapify(arr, i, 0);     // Call heapify on the reduced heap
-  }
+    // Extract elements one by one
+    for (int i = n - 1; i > 0; i--) {
+        swap(&arr[0], &arr[i]);
+        maxHeap(arr, i, 0);
+    }
 }
 
-// Print array contents
-void print(int *arr, int n)
-{
-  for (int i = 0; i < n; i++)
-    printf("%d, ", arr[i]);
-  printf("\n");
+/* Helper function to print the array */
+void printArray(int arr[], int n) {
+    for (int i = 0; i < n; ++i)
+        printf("%d ", arr[i]);
+    printf("\n");
 }
 
-int main()
-{
-  int arr[] = {65, 11115, 48, 3, 233, 1, 2233};
-  int n = sizeof(arr) / sizeof(arr[0]);
+/* Demonstration */
+int main() {
+    int arr[] = {12, 11, 13, 5, 6, 7};
+    int n = sizeof(arr) / sizeof(arr[0]);
 
-  printf("Array length: %d\n", n);
-  printf("Before sorting: ");
-  print(arr, n);
+    printf("Original array:\n");
+    printArray(arr, n);
 
-  heapSort(arr, n);
+    heapSort(arr, n);
 
-  printf("After sorting: ");
-  print(arr, n);
+    printf("Sorted array:\n");
+    printArray(arr, n);
 
-  return 0;
+    return 0;
 }

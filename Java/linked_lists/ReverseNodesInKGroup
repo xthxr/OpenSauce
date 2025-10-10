@@ -1,0 +1,98 @@
+ /**
+     * Reverses nodes of a linked list in groups of size k.
+     * 
+     * Example:
+     * Input:  1 -> 2 -> 3 -> 4 -> 5,  k = 2
+     * Steps:
+     *   Group 1: 1 -> 2   => reversed => 2 -> 1
+     *   Group 2: 3 -> 4   => reversed => 4 -> 3
+     *   Group 3: 5        => remains as 5 (less than k)
+     * Output: 2 -> 1 -> 4 -> 3 -> 5
+     * 
+     * Another Example:
+     * Input:  1 -> 2 -> 3 -> 4 -> 5,  k = 3
+     * Steps:
+     *   Group 1: 1 -> 2 -> 3 => reversed => 3 -> 2 -> 1
+     *   Group 2: 4 -> 5      => remains as 4 -> 5
+     * Output: 3 -> 2 -> 1 -> 4 -> 5
+*/
+
+class ReverseNodesInKGroup {
+    
+    // Definition for singly-linked list.
+    static class ListNode {
+        int val;
+        ListNode next;
+        ListNode(int val) { this.val = val; }
+    }
+
+    /**
+     * Reverses nodes of a linked list in groups of size k.
+     */
+    public ListNode reverseKGroup(ListNode head, int k) {
+        ListNode curr = head;
+        int count = 0;
+
+        // Step 1: Check if there are at least k nodes left in the list
+        while (curr != null && count < k) {
+            count++;
+            curr = curr.next;
+        }
+
+        // If fewer than k nodes remain, no need to reverse
+        if (count < k)
+            return head;
+
+        // Step 2: Reverse k nodes
+        curr = head;
+        count = 0;
+        ListNode prev = null, next = null;
+
+        while (count < k) {
+            next = curr.next;   // store next node
+            curr.next = prev;   // reverse the link
+            prev = curr;        // move prev forward
+            curr = next;        // move curr forward
+            count++;
+        }
+
+        // Step 3: Recursively call for the remaining list
+        // 'head' is now the last node in the reversed group
+        head.next = reverseKGroup(next, k);
+
+        // 'prev' is the new head after reversal
+        return prev;
+    }
+
+    // Helper function to print the linked list
+    public static void printList(ListNode head) {
+        while (head != null) {
+            System.out.print(head.val + " ");
+            head = head.next;
+        }
+        System.out.println();
+    }
+
+    // Main method to test
+    public static void main(String[] args) {
+        ReverseNodesInKGroup obj = new ReverseNodesInKGroup();
+
+        // Create a sample linked list: 1 -> 2 -> 3 -> 4 -> 5
+        ListNode head = new ListNode(1);
+        head.next = new ListNode(2);
+        head.next.next = new ListNode(3);
+        head.next.next.next = new ListNode(4);
+        head.next.next.next.next = new ListNode(5);
+
+        int k = 2;
+
+        System.out.println("Original Linked List:");
+        printList(head);
+
+        // Reverse in groups of k
+        ListNode newHead = obj.reverseKGroup(head, k);
+
+        System.out.println("Linked List after reversing in groups of " + k + ":");
+        printList(newHead);
+    }
+}
