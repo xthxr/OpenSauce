@@ -33,7 +33,7 @@ The starting pixel is already colored with 0, which is the same as the target co
 
 // using dfs approach
 // Time Complexity: O(m*n) where m is the number of rows and n is the number of columns in the image
-// Space Complexity: O(m*n) for the recursion stack in the worst case
+// Space Complexity: O(m*n) for the recursion stack in the worst case where m is the number of rows and n is the number of columns
 #include <iostream>
 #include <vector>
 using namespace std;
