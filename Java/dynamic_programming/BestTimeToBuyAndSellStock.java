@@ -1,4 +1,4 @@
-class best-time-to-buy-and-sell-stock{
+class BestTimeToBuyAndSellStock{
   public static int maximumProfit(int []Arr){
   	int maxProfit = 0;
   	int mini = Arr[0];
