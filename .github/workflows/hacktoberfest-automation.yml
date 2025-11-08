@@ -21,7 +21,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issue.number,
-              labels: ['Hacktoberfest', 'good first issue']
+              labels: ['OpenSauce', 'good first issue', 'DSA']
             });
 
             console.log(`✅ Added labels to issue #${issue.number}`);
