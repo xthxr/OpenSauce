@@ -4,6 +4,14 @@ Welcome to OpenSauce! Your gateway to open-source contributions for **Hacktoberf
 
 This repository is dedicated to **Data Structures and Algorithms (DSA)** implementations in multiple programming languages. Whether you're a beginner or an experienced developer, contribute your DSA solutions and be part of the open-source community!
 
+## 🌐 Live Project
+
+Explore our interactive website to browse through all DSA implementations by programming language, view contributors, and navigate the repository structure with ease!
+
+**🔗 [View Live Project](https://opensaucedsarepo.netlify.app/)**
+
+
+
 ## 📁 Repository Structure
 
 This repository contains language-specific folders for DSA contributions:
@@ -116,10 +124,13 @@ This repository is participating in **Hacktoberfest 2025**!
 - Check the language-specific README in each folder
 - Open an issue if you have questions
 - Review existing pull requests for examples
+- Visit our [live website](https://opensaucedsarepo.netlify.app/) to explore the repository
 
 ## 🎉 Contributors
 
 Thank you to all contributors who help make this project better!
+
+Check out all our amazing contributors on the [live project page](https://opensaucedsarepo.netlify.app/)!
 
 ---
 

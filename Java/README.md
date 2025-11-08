@@ -6,6 +6,7 @@ Welcome to the Java folder for DSA (Data Structures and Algorithms) contribution
 
 Organize your code by topic:
 - `arrays/` - Array-related problems
+- `subarrays/` - Subarray problems (Kadane's, Sliding Window, Prefix Sum)
 - `linked_lists/` - Linked list implementations and problems
 - `stacks/` - Stack implementations and problems
 - `queues/` - Queue implementations and problems
