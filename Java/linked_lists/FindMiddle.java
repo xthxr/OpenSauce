@@ -9,6 +9,9 @@ class Node {
 
 public class FindMiddle {
     static int findMiddle(Node head) {
+        if (head == null) {
+            return -1; // Or throw an exception depending on requirements
+        }
         Node slow = head;
         Node fast = head;
         while (fast != null && fast.next != null) {
