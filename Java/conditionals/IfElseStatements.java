@@ -24,6 +24,11 @@ public class IfElseStatements {
     }
 
     //nested if-else example
+    /**
+ * Evaluates a student's score and returns the corresponding grade.
+ * @param score student's score between 0 and 100
+ * @return grade A, B, C, D, F, or Invalid score
+ */
     public static String gradeEvaluation(int score) {
         if (score >= 0 && score <= 100) {
             if (score >= 90) {
@@ -49,5 +54,6 @@ public class IfElseStatements {
 
         System.out.println("Grade for 85: " + gradeEvaluation(85));
         System.out.println("Grade for 72: " + gradeEvaluation(72));
+        System.out.println("Grade for 100: " + gradeEvaluation(100)); //check boundary cases
     }
 }
