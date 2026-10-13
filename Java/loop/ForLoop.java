@@ -22,6 +22,11 @@ public class ForLoop {
 
     //for loop with array
     public static int sumArray(int[] arr) {
+         if (arr == null) {
+        throw new IllegalArgumentException(
+            "Array cannot be null"
+        );
+    }
         int sum = 0;
         for (int i = 0; i < arr.length; i++) {
             sum += arr[i];
